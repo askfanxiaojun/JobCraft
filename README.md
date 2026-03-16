@@ -25,7 +25,7 @@ npm install
 npm run dev
 ```
 
-浏览器打开 http://localhost:5173，首次使用需配置 API：
+浏览器打开 http://localhost:5173 ，首次使用需配置 API：
 
 - **API Key** — 火山引擎 API 密钥
 - **Endpoint ID** — 推理接入点 ID（如 `ep-xxxxxxxx-xxxxx`）

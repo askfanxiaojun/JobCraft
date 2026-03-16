@@ -11,6 +11,7 @@ import { OptimizePanel } from './components/OptimizePanel';
 import { HistoryPanel } from './components/HistoryPanel';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useVolcanoApi } from './hooks/useVolcanoApi';
+import { useTheme } from './hooks/useTheme';
 import { getPhase1Prompt, getPhase2Prompt, getTranscriptPrompt, getOptimizePrompt } from './utils/prompts';
 import type { ApiConfig, AppMode, OptimizeInput, InterviewResult, GenerationState, ExtractionState } from './types';
 
@@ -38,6 +39,12 @@ const INITIAL_OPTIMIZE_STATE: ExtractionState = {
   error: null,
 };
 
+const TAB_CONFIG = [
+  { key: 'resume' as AppMode, label: '根据简历出题', shortLabel: '出题', icon: FileText },
+  { key: 'transcript' as AppMode, label: '面试录音提取', shortLabel: '提取', icon: Mic },
+  { key: 'optimize' as AppMode, label: '回答优化', shortLabel: '优化', icon: PenLine },
+];
+
 export default function App() {
   const [apiConfig, setApiConfig] = useLocalStorage<ApiConfig>('jc_api_key', DEFAULT_CONFIG);
   const [resume, setResume] = useLocalStorage<string>('jc_resume', '');
@@ -54,6 +61,7 @@ export default function App() {
   const [successToast, setSuccessToast] = useState(false);
 
   const { streamText } = useVolcanoApi();
+  const { theme, toggleTheme } = useTheme();
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -302,166 +310,164 @@ export default function App() {
     }
   };
 
+  // Determine button config based on mode
+  const getActionButton = () => {
+    if (isLoading) {
+      return (
+        <button
+          onClick={handleAbort}
+          className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-[13px] font-semibold text-danger bg-danger-muted hover:bg-danger/20 border border-danger/20 rounded-2xl transition-all duration-300"
+        >
+          <StopCircle className="w-4 h-4" />
+          停止生成
+        </button>
+      );
+    }
+
+    if (mode === 'resume') {
+      return (
+        <button
+          onClick={handleGenerate}
+          disabled={!resume.trim()}
+          className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-[13px] font-semibold btn-primary rounded-2xl"
+        >
+          <Sparkles className="w-4 h-4" />
+          {genState.phase1 || genState.phase2 ? '重新生成' : '生成面试题'}
+        </button>
+      );
+    }
+
+    if (mode === 'transcript') {
+      return (
+        <button
+          onClick={handleExtract}
+          disabled={!transcript.trim()}
+          className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-[13px] font-semibold rounded-2xl bg-teal text-white transition-all duration-300 hover:bg-teal/90 hover:shadow-lg hover:shadow-teal/25 hover:-translate-y-0.5 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+        >
+          <Sparkles className="w-4 h-4" />
+          {extractState.content ? '重新提取' : '提取问答'}
+        </button>
+      );
+    }
+
+    return (
+      <button
+        onClick={handleOptimize}
+        disabled={!optimizeInput.question.trim() || !optimizeInput.answer.trim()}
+        className="w-full flex items-center justify-center gap-2.5 px-4 py-3 text-[13px] font-semibold rounded-2xl bg-amber text-black transition-all duration-300 hover:bg-amber/90 hover:shadow-lg hover:shadow-amber/20 hover:-translate-y-0.5 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+      >
+        <Sparkles className="w-4 h-4" />
+        {optimizeState.content ? '重新优化' : '优化回答'}
+      </button>
+    );
+  };
+
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
+    <div className="h-screen flex flex-col overflow-hidden bg-surface transition-colors duration-300">
+      {/* Subtle gradient background */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-orb-1 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orb-2 rounded-full blur-3xl" />
+      </div>
+
       <Header
         onOpenSettings={() => setShowApiModal(true)}
         onToggleHistory={() => setShowHistory(!showHistory)}
         historyCount={history.length}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
-      <main className="flex-1 min-h-0 overflow-hidden">
-        <div className="h-full max-w-screen-2xl mx-auto px-4 py-4 sm:py-6 flex flex-col">
+      <main className="relative flex-1 min-h-0 overflow-hidden">
+        <div className="h-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 flex flex-col">
+
           {/* Tab 切换 */}
-          <div className="shrink-0 mb-4 flex items-center gap-1 bg-gray-100 p-1 rounded-xl w-fit">
-            <button
-              onClick={() => setMode('resume')}
-              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                mode === 'resume'
-                  ? 'bg-white text-indigo-700 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">根据简历出题</span>
-              <span className="sm:hidden">出题</span>
-            </button>
-            <button
-              onClick={() => setMode('transcript')}
-              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                mode === 'transcript'
-                  ? 'bg-white text-teal-700 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Mic className="w-4 h-4" />
-              <span className="hidden sm:inline">面试录音提取</span>
-              <span className="sm:hidden">提取</span>
-            </button>
-            <button
-              onClick={() => setMode('optimize')}
-              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                mode === 'optimize'
-                  ? 'bg-white text-amber-700 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <PenLine className="w-4 h-4" />
-              <span className="hidden sm:inline">回答优化</span>
-              <span className="sm:hidden">优化</span>
-            </button>
+          <div className="shrink-0 mb-6 flex items-center gap-1 p-1 rounded-2xl bg-surface-card border border-border-subtle w-fit">
+            {TAB_CONFIG.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = mode === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setMode(tab.key)}
+                  className={`flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium rounded-xl transition-all duration-300 ${
+                    isActive
+                      ? 'bg-surface-card-hover text-text-primary shadow-sm'
+                      : 'text-text-tertiary hover:text-text-secondary hover:bg-surface-card'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.shortLabel}</span>
+                </button>
+              );
+            })}
           </div>
 
-          <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-cols-[minmax(280px,1fr)_2fr] gap-4 lg:gap-5">
-            {/* 左侧编辑器 */}
-            <div className="flex flex-col min-h-[240px] lg:min-h-0">
-              <div className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 p-3 sm:p-4">
+          {/* Main content grid */}
+          <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-cols-[minmax(300px,1fr)_2fr] gap-5 lg:gap-6">
+
+            {/* Left: Editor panel */}
+            <div className="flex flex-col min-h-[260px] lg:min-h-0 gap-4">
+              <div className="flex-1 min-h-0 flex flex-col glass-card rounded-2xl p-4 sm:p-5">
                 {mode === 'resume' ? (
-                  <ResumeEditor
-                    value={resume}
-                    onChange={setResume}
-                    isLoading={isResumeLoading}
-                  />
+                  <ResumeEditor value={resume} onChange={setResume} isLoading={isResumeLoading} />
                 ) : mode === 'transcript' ? (
-                  <TranscriptEditor
-                    value={transcript}
-                    onChange={setTranscript}
-                    isLoading={isTranscriptLoading}
-                  />
+                  <TranscriptEditor value={transcript} onChange={setTranscript} isLoading={isTranscriptLoading} />
                 ) : (
-                  <AnswerEditor
-                    value={optimizeInput}
-                    onChange={setOptimizeInput}
-                    isLoading={isOptimizeLoading}
-                  />
+                  <AnswerEditor value={optimizeInput} onChange={setOptimizeInput} isLoading={isOptimizeLoading} />
                 )}
               </div>
 
-              <div className="mt-2 space-y-2 shrink-0">
+              {/* Status indicators */}
+              <div className="space-y-3 shrink-0">
                 {mode === 'resume' && isResumeLoading && (
-                  <div className="flex items-center gap-3 px-1">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <span className={`w-2 h-2 rounded-full ${genState.isLoadingPhase1 ? 'bg-indigo-500 animate-pulse' : 'bg-green-500'}`} />
-                      一面题目{genState.isLoadingPhase1 ? '生成中...' : '已完成'}
+                  <div className="flex items-center gap-4 px-1">
+                    <div className="flex items-center gap-2 text-[11px] text-text-tertiary">
+                      <span className={`w-2 h-2 rounded-full ${genState.isLoadingPhase1 ? 'bg-accent animate-pulse-glow' : 'bg-success'}`} />
+                      一面{genState.isLoadingPhase1 ? '生成中...' : '已完成'}
                     </div>
-                    <span className="text-gray-200">|</span>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <span className={`w-2 h-2 rounded-full ${genState.isLoadingPhase2 ? 'bg-purple-500 animate-pulse' : genState.phase2 ? 'bg-green-500' : 'bg-gray-200'}`} />
-                      二面题目{genState.isLoadingPhase2 ? '生成中...' : genState.phase2 ? '已完成' : '等待中'}
+                    <div className="w-px h-3 bg-border-subtle" />
+                    <div className="flex items-center gap-2 text-[11px] text-text-tertiary">
+                      <span className={`w-2 h-2 rounded-full ${genState.isLoadingPhase2 ? 'bg-purple-400 animate-pulse-glow' : genState.phase2 ? 'bg-success' : 'bg-border-default'}`} />
+                      二面{genState.isLoadingPhase2 ? '生成中...' : genState.phase2 ? '已完成' : '等待中'}
                     </div>
                   </div>
                 )}
                 {mode === 'transcript' && isTranscriptLoading && (
-                  <div className="flex items-center gap-3 px-1">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
-                      问答提取中...
-                    </div>
+                  <div className="flex items-center gap-2 px-1 text-[11px] text-text-tertiary">
+                    <span className="w-2 h-2 rounded-full bg-teal animate-pulse-glow" />
+                    问答提取中...
                   </div>
                 )}
                 {mode === 'optimize' && isOptimizeLoading && (
-                  <div className="flex items-center gap-3 px-1">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                      回答优化中...
-                    </div>
+                  <div className="flex items-center gap-2 px-1 text-[11px] text-text-tertiary">
+                    <span className="w-2 h-2 rounded-full bg-amber animate-pulse-glow" />
+                    回答优化中...
                   </div>
                 )}
-                {isLoading ? (
-                  <button
-                    onClick={handleAbort}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors"
-                  >
-                    <StopCircle className="w-4 h-4" />
-                    停止生成
-                  </button>
-                ) : mode === 'resume' ? (
-                  <button
-                    onClick={handleGenerate}
-                    disabled={!resume.trim()}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed rounded-xl transition-all shadow-sm hover:shadow-indigo-200 hover:shadow-md"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    {genState.phase1 || genState.phase2 ? '重新生成' : '生成面试题'}
-                  </button>
-                ) : mode === 'transcript' ? (
-                  <button
-                    onClick={handleExtract}
-                    disabled={!transcript.trim()}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:bg-teal-300 disabled:cursor-not-allowed rounded-xl transition-all shadow-sm hover:shadow-teal-200 hover:shadow-md"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    {extractState.content ? '重新提取' : '提取问答'}
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleOptimize}
-                    disabled={!optimizeInput.question.trim() || !optimizeInput.answer.trim()}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 disabled:cursor-not-allowed rounded-xl transition-all shadow-sm hover:shadow-amber-200 hover:shadow-md"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    {optimizeState.content ? '重新优化' : '优化回答'}
-                  </button>
-                )}
+
+                {getActionButton()}
               </div>
             </div>
 
-            {/* 右侧结果展示 */}
+            {/* Right: Result panel */}
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              {/* Error */}
               {currentError && (
-                <div className="mb-3 shrink-0 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                <div className="mb-4 shrink-0 flex items-start gap-3 p-4 bg-danger-muted border border-danger/20 rounded-2xl text-[13px] text-danger animate-fade-in">
                   <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span className="flex-1">{currentError}</span>
+                  <span className="flex-1 leading-relaxed">{currentError}</span>
                   <button
                     onClick={clearError}
-                    className="shrink-0 text-red-400 hover:text-red-600"
+                    className="shrink-0 text-danger/50 hover:text-danger transition-colors duration-300"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
               )}
 
-              <div className="flex-1 min-h-0 bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-5 flex flex-col overflow-hidden">
+              <div className="flex-1 min-h-0 glass-card rounded-2xl p-5 sm:p-6 flex flex-col overflow-hidden">
                 {mode === 'resume' ? (
                   <QuestionPanel
                     phase1Content={genState.phase1}
@@ -486,26 +492,26 @@ export default function App() {
         </div>
       </main>
 
-      {/* 生成进度条 */}
+      {/* Loading progress bar */}
       {isLoading && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 h-1 bg-gray-200">
+        <div className="fixed bottom-0 left-0 right-0 z-30 h-[2px] bg-border-subtle">
           <div
-            className={`h-full transition-all duration-500 ${
+            className={`h-full transition-all duration-700 ease-out ${
               mode === 'resume'
-                ? `bg-indigo-500 ${genState.isLoadingPhase1 ? 'w-1/2' : 'w-full'}`
+                ? `bg-gradient-to-r from-accent to-purple-400 ${genState.isLoadingPhase1 ? 'w-1/2' : 'w-full'}`
                 : mode === 'transcript'
-                  ? 'bg-teal-500 w-full animate-pulse'
-                  : 'bg-amber-500 w-full animate-pulse'
+                  ? 'bg-gradient-to-r from-teal to-cyan-400 w-full animate-shimmer'
+                  : 'bg-gradient-to-r from-amber to-orange-400 w-full animate-shimmer'
             }`}
           />
         </div>
       )}
 
-      {/* 成功 Toast */}
+      {/* Success Toast */}
       {successToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-3 bg-gray-900 text-white text-sm rounded-xl shadow-lg animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-green-400" />
-          {mode === 'resume' ? '面试题生成完成！' : mode === 'transcript' ? '问答提取完成！' : '回答优化完成！'}
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3.5 glass-card rounded-2xl text-[13px] text-text-primary animate-fade-in-toast border-border-default">
+          <CheckCircle2 className="w-4 h-4 text-success" />
+          {mode === 'resume' ? '面试题生成完成' : mode === 'transcript' ? '问答提取完成' : '回答优化完成'}
         </div>
       )}
 

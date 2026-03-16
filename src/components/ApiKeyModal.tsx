@@ -35,26 +35,28 @@ export function ApiKeyModal({ isOpen, config, onSave, onClose }: ApiKeyModalProp
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-overlay backdrop-blur-md"
       onClick={handleBackdropClick}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+      <div className="glass-card rounded-3xl w-full max-w-md animate-fade-in border-border-default">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 pb-0">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">火山引擎 API 配置</h2>
-            <p className="text-sm text-gray-500 mt-0.5">配置将保存在本地，不会上传服务器</p>
+            <h2 className="text-base font-semibold text-text-primary tracking-tight">API 配置</h2>
+            <p className="text-[12px] text-text-tertiary mt-1">配置将保存在本地，不会上传服务器</p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="w-8 h-8 flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-surface-card-hover rounded-xl transition-all duration-300"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
+        {/* Body */}
         <div className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-[12px] font-semibold text-text-secondary mb-2 uppercase tracking-wider">
               API Key
             </label>
             <div className="relative">
@@ -63,12 +65,12 @@ export function ApiKeyModal({ isOpen, config, onSave, onClose }: ApiKeyModalProp
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="请输入火山引擎 API Key"
-                className="w-full pr-10 pl-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pr-10 pl-4 py-3 text-[13px] input-field rounded-2xl"
               />
               <button
                 type="button"
                 onClick={() => setShowKey(!showKey)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary transition-colors duration-300"
               >
                 {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -76,7 +78,7 @@ export function ApiKeyModal({ isOpen, config, onSave, onClose }: ApiKeyModalProp
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-[12px] font-semibold text-text-secondary mb-2 uppercase tracking-wider">
               模型 Endpoint ID
             </label>
             <input
@@ -84,9 +86,9 @@ export function ApiKeyModal({ isOpen, config, onSave, onClose }: ApiKeyModalProp
               value={endpointId}
               onChange={(e) => setEndpointId(e.target.value)}
               placeholder="例如：ep-xxxxxxxx-xxxxx"
-              className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 text-[13px] input-field rounded-2xl"
             />
-            <p className="mt-1.5 text-xs text-gray-400">
+            <p className="mt-2 text-[11px] text-text-tertiary">
               在火山引擎控制台「推理接入点」中获取
             </p>
           </div>
@@ -95,24 +97,25 @@ export function ApiKeyModal({ isOpen, config, onSave, onClose }: ApiKeyModalProp
             href="https://console.volcengine.com/ark/region:ark+cn-beijing/endpoint"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-700"
+            className="inline-flex items-center gap-1.5 text-[12px] text-accent hover:text-accent-hover transition-colors duration-300"
           >
             <ExternalLink className="w-3 h-3" />
             前往火山引擎控制台获取配置
           </a>
         </div>
 
-        <div className="flex gap-3 p-6 pt-0">
+        {/* Footer */}
+        <div className="flex gap-3 p-6 pt-2">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            className="flex-1 px-4 py-3 text-[13px] font-medium btn-ghost rounded-2xl border border-border-subtle"
           >
             取消
           </button>
           <button
             onClick={handleSave}
             disabled={!apiKey.trim() || !endpointId.trim()}
-            className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed rounded-lg transition-colors"
+            className="flex-1 px-4 py-3 text-[13px] font-medium btn-primary rounded-2xl"
           >
             保存配置
           </button>
