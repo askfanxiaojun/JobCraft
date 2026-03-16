@@ -1,7 +1,8 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Brain, Target, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
-import { useState } from 'react';
+import { Brain, Target, Loader2, ChevronDown, ChevronUp, Download, Copy, Check } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { exportAsMarkdown } from '../utils/export';
 
 interface PhaseCardProps {
   phase: 1 | 2;
@@ -11,6 +12,19 @@ interface PhaseCardProps {
 
 function PhaseCard({ phase, content, isLoading }: PhaseCardProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!content) return;
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback: noop
+    }
+  }, [content]);
 
   const isPhase1 = phase === 1;
   const icon = isPhase1 ? <Target className="w-4 h-4" /> : <Brain className="w-4 h-4" />;
@@ -53,9 +67,21 @@ function PhaseCard({ phase, content, isLoading }: PhaseCardProps) {
           </div>
         </div>
         {content && (
-          <button className="text-gray-400 hover:text-gray-600 transition-colors">
-            {collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleCopy}
+              className={`p-1.5 rounded-md transition-colors ${copied ? 'text-green-600 bg-green-50' : 'text-gray-400 hover:text-gray-600 hover:bg-white/60'}`}
+              title={copied ? '已复制' : '复制 Markdown'}
+            >
+              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            </button>
+            <button
+              className="text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-md hover:bg-white/60"
+              onClick={(e) => { e.stopPropagation(); setCollapsed(!collapsed); }}
+            >
+              {collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            </button>
+          </div>
         )}
       </div>
 
@@ -69,7 +95,7 @@ function PhaseCard({ phase, content, isLoading }: PhaseCardProps) {
           )}
 
           {content && (
-            <div className="bg-white/70 rounded-lg p-4 prose prose-sm max-w-none prose-headings:text-gray-800 prose-p:text-gray-700 prose-li:text-gray-700 prose-strong:text-gray-900 scrollbar-thin overflow-auto max-h-[60vh]">
+            <div className="bg-white/70 rounded-lg p-4 prose prose-sm max-w-none prose-headings:text-gray-800 prose-p:text-gray-700 prose-li:text-gray-700 prose-strong:text-gray-900">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
               {isLoading && (
                 <span className="inline-block w-1.5 h-4 bg-gray-500 animate-pulse ml-0.5 align-middle" />
@@ -96,6 +122,8 @@ export function QuestionPanel({
   isLoadingPhase2,
 }: QuestionPanelProps) {
   const hasAnyContent = phase1Content || phase2Content || isLoadingPhase1 || isLoadingPhase2;
+  const isLoading = isLoadingPhase1 || isLoadingPhase2;
+  const canExport = (phase1Content || phase2Content) && !isLoading;
 
   if (!hasAnyContent) {
     return (
@@ -112,9 +140,23 @@ export function QuestionPanel({
   }
 
   return (
-    <div className="flex flex-col gap-4 h-full overflow-y-auto scrollbar-thin pb-4">
-      <PhaseCard phase={1} content={phase1Content} isLoading={isLoadingPhase1} />
-      <PhaseCard phase={2} content={phase2Content} isLoading={isLoadingPhase2} />
+    <div className="flex flex-col h-full min-h-0">
+      {canExport && (
+        <div className="flex justify-end mb-3 shrink-0">
+          <button
+            onClick={() => exportAsMarkdown(phase1Content, phase2Content)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            导出 Markdown
+          </button>
+        </div>
+      )}
+
+      <div className="flex-1 flex flex-col gap-4 overflow-y-auto scrollbar-thin pb-4 min-h-0">
+        <PhaseCard phase={1} content={phase1Content} isLoading={isLoadingPhase1} />
+        <PhaseCard phase={2} content={phase2Content} isLoading={isLoadingPhase2} />
+      </div>
     </div>
   );
 }

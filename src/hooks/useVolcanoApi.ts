@@ -1,12 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
-import type { ApiConfig } from '../types';
+import type { ApiConfig, ChatMessage } from '../types';
 
 const VOLCANO_API_URL = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
 
 interface UseVolcanoApiReturn {
   streamText: (
     config: ApiConfig,
-    prompt: string,
+    messages: ChatMessage[],
     onChunk: (chunk: string) => void,
     signal?: AbortSignal
   ) => Promise<void>;
@@ -27,7 +27,7 @@ export function useVolcanoApi(): UseVolcanoApiReturn {
   const streamText = useCallback(
     async (
       config: ApiConfig,
-      prompt: string,
+      messages: ChatMessage[],
       onChunk: (chunk: string) => void,
       signal?: AbortSignal
     ) => {
@@ -50,7 +50,7 @@ export function useVolcanoApi(): UseVolcanoApiReturn {
           },
           body: JSON.stringify({
             model: config.endpointId,
-            messages: [{ role: 'user', content: prompt }],
+            messages,
             stream: true,
           }),
           signal: combinedSignal,
