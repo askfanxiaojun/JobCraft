@@ -42,3 +42,13 @@ export function exportExtractionAsMarkdown(content: string) {
   const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
   triggerDownload(blob, `JobCraft-面试记录提取-${dateStr}.md`);
 }
+
+export function exportOptimizeAsMarkdown(content: string) {
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  let md = `# JobCraft 回答优化报告\n\n`;
+  md += `> 生成日期：${dateStr}\n\n---\n\n`;
+  md += content;
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  triggerDownload(blob, `JobCraft-回答优化-${dateStr}.md`);
+}

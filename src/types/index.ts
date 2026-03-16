@@ -8,9 +8,15 @@ export interface ChatMessage {
   content: string;
 }
 
-export type AppMode = 'resume' | 'transcript';
+export type AppMode = 'resume' | 'transcript' | 'optimize';
 
 export type InterviewPhase = 'phase1' | 'phase2';
+
+export interface OptimizeInput {
+  question: string;
+  answer: string;
+  extra: string;
+}
 
 export interface InterviewResult {
   id: string;
@@ -21,6 +27,8 @@ export interface InterviewResult {
   phase2: string;
   transcriptSnippet?: string;
   extractedContent?: string;
+  optimizeSnippet?: string;
+  optimizedContent?: string;
 }
 
 export interface GenerationState {

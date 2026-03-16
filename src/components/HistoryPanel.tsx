@@ -1,4 +1,4 @@
-import { X, Clock, Trash2, ChevronRight, FileText, Mic } from 'lucide-react';
+import { X, Clock, Trash2, ChevronRight, FileText, Mic, PenLine } from 'lucide-react';
 import type { InterviewResult } from '../types';
 
 interface HistoryPanelProps {
@@ -89,6 +89,11 @@ export function HistoryPanel({ isOpen, history, onClose, onSelect, onDelete, onC
                           <Mic className="w-2.5 h-2.5" />
                           录音提取
                         </span>
+                      ) : item.mode === 'optimize' ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                          <PenLine className="w-2.5 h-2.5" />
+                          回答优化
+                        </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
                           <FileText className="w-2.5 h-2.5" />
@@ -98,7 +103,7 @@ export function HistoryPanel({ isOpen, history, onClose, onSelect, onDelete, onC
                       <span className="text-xs text-gray-400">{formatDate(item.timestamp)}</span>
                     </div>
                     <p className="text-sm text-gray-700 leading-snug line-clamp-2">
-                      {item.mode === 'transcript' ? item.transcriptSnippet : item.resumeSnippet}
+                      {item.mode === 'transcript' ? item.transcriptSnippet : item.mode === 'optimize' ? item.optimizeSnippet : item.resumeSnippet}
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">

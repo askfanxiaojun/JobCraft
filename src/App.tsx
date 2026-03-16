@@ -1,19 +1,22 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Sparkles, AlertCircle, X, StopCircle, CheckCircle2, FileText, Mic } from 'lucide-react';
+import { Sparkles, AlertCircle, X, StopCircle, CheckCircle2, FileText, Mic, PenLine } from 'lucide-react';
 import { Header } from './components/Header';
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { ResumeEditor } from './components/ResumeEditor';
 import { TranscriptEditor } from './components/TranscriptEditor';
+import { AnswerEditor } from './components/AnswerEditor';
 import { QuestionPanel } from './components/QuestionPanel';
 import { ExtractionPanel } from './components/ExtractionPanel';
+import { OptimizePanel } from './components/OptimizePanel';
 import { HistoryPanel } from './components/HistoryPanel';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useVolcanoApi } from './hooks/useVolcanoApi';
-import { getPhase1Prompt, getPhase2Prompt, getTranscriptPrompt } from './utils/prompts';
-import type { ApiConfig, AppMode, InterviewResult, GenerationState, ExtractionState } from './types';
+import { getPhase1Prompt, getPhase2Prompt, getTranscriptPrompt, getOptimizePrompt } from './utils/prompts';
+import type { ApiConfig, AppMode, OptimizeInput, InterviewResult, GenerationState, ExtractionState } from './types';
 
 const DEFAULT_CONFIG: ApiConfig = { apiKey: '', endpointId: '' };
 const MAX_HISTORY = 20;
+const DEFAULT_OPTIMIZE_INPUT: OptimizeInput = { question: '', answer: '', extra: '' };
 
 const INITIAL_GEN_STATE: GenerationState = {
   phase1: '',
@@ -29,10 +32,17 @@ const INITIAL_EXTRACT_STATE: ExtractionState = {
   error: null,
 };
 
+const INITIAL_OPTIMIZE_STATE: ExtractionState = {
+  content: '',
+  isLoading: false,
+  error: null,
+};
+
 export default function App() {
   const [apiConfig, setApiConfig] = useLocalStorage<ApiConfig>('jc_api_key', DEFAULT_CONFIG);
   const [resume, setResume] = useLocalStorage<string>('jc_resume', '');
   const [transcript, setTranscript] = useLocalStorage<string>('jc_transcript', '');
+  const [optimizeInput, setOptimizeInput] = useLocalStorage<OptimizeInput>('jc_optimize_input', DEFAULT_OPTIMIZE_INPUT);
   const [history, setHistory] = useLocalStorage<InterviewResult[]>('jc_history', []);
 
   const [mode, setMode] = useState<AppMode>('resume');
@@ -40,6 +50,7 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [genState, setGenState] = useState<GenerationState>(INITIAL_GEN_STATE);
   const [extractState, setExtractState] = useState<ExtractionState>(INITIAL_EXTRACT_STATE);
+  const [optimizeState, setOptimizeState] = useState<ExtractionState>(INITIAL_OPTIMIZE_STATE);
   const [successToast, setSuccessToast] = useState(false);
 
   const { streamText } = useVolcanoApi();
@@ -53,7 +64,8 @@ export default function App() {
 
   const isResumeLoading = genState.isLoadingPhase1 || genState.isLoadingPhase2;
   const isTranscriptLoading = extractState.isLoading;
-  const isLoading = mode === 'resume' ? isResumeLoading : isTranscriptLoading;
+  const isOptimizeLoading = optimizeState.isLoading;
+  const isLoading = mode === 'resume' ? isResumeLoading : mode === 'transcript' ? isTranscriptLoading : isOptimizeLoading;
 
   const handleGenerate = useCallback(async () => {
     if (!resume.trim()) return;
@@ -179,12 +191,67 @@ export default function App() {
     }
   }, [transcript, apiConfig, streamText, setHistory]);
 
+  const handleOptimize = useCallback(async () => {
+    if (!optimizeInput.question.trim() || !optimizeInput.answer.trim()) return;
+    if (!apiConfig.apiKey || !apiConfig.endpointId) {
+      setShowApiModal(true);
+      return;
+    }
+
+    abortRef.current = new AbortController();
+    const signal = abortRef.current.signal;
+
+    setOptimizeState({ content: '', isLoading: true, error: null });
+
+    let result = '';
+
+    try {
+      await streamText(
+        apiConfig,
+        getOptimizePrompt(optimizeInput.question, optimizeInput.answer, optimizeInput.extra),
+        (chunk) => {
+          result += chunk;
+          setOptimizeState((prev) => ({ ...prev, content: prev.content + chunk }));
+        },
+        signal
+      );
+
+      setOptimizeState((prev) => ({ ...prev, isLoading: false }));
+      setSuccessToast(true);
+      setTimeout(() => setSuccessToast(false), 3000);
+
+      const snippet = optimizeInput.question.slice(0, 60).replace(/\s+/g, ' ').trim() + (optimizeInput.question.length > 60 ? '...' : '');
+
+      const newResult: InterviewResult = {
+        id: Date.now().toString(),
+        timestamp: Date.now(),
+        mode: 'optimize',
+        resumeSnippet: '',
+        phase1: '',
+        phase2: '',
+        optimizeSnippet: snippet,
+        optimizedContent: result,
+      };
+
+      setHistory((prev) => [newResult, ...prev].slice(0, MAX_HISTORY));
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') {
+        setOptimizeState((prev) => ({ ...prev, isLoading: false }));
+        return;
+      }
+      const msg = err instanceof Error ? err.message : '优化失败，请重试';
+      setOptimizeState((prev) => ({ ...prev, isLoading: false, error: msg }));
+    }
+  }, [optimizeInput, apiConfig, streamText, setHistory]);
+
   const handleAbort = () => {
     abortRef.current?.abort();
     if (mode === 'resume') {
       setGenState((prev) => ({ ...prev, isLoadingPhase1: false, isLoadingPhase2: false }));
-    } else {
+    } else if (mode === 'transcript') {
       setExtractState((prev) => ({ ...prev, isLoading: false }));
+    } else {
+      setOptimizeState((prev) => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -200,9 +267,15 @@ export default function App() {
         isLoadingPhase2: false,
         error: null,
       });
-    } else {
+    } else if (resultMode === 'transcript') {
       setExtractState({
         content: result.extractedContent || '',
+        isLoading: false,
+        error: null,
+      });
+    } else {
+      setOptimizeState({
+        content: result.optimizedContent || '',
         isLoading: false,
         error: null,
       });
@@ -218,12 +291,14 @@ export default function App() {
     setHistory([]);
   };
 
-  const currentError = mode === 'resume' ? genState.error : extractState.error;
+  const currentError = mode === 'resume' ? genState.error : mode === 'transcript' ? extractState.error : optimizeState.error;
   const clearError = () => {
     if (mode === 'resume') {
       setGenState((prev) => ({ ...prev, error: null }));
-    } else {
+    } else if (mode === 'transcript') {
       setExtractState((prev) => ({ ...prev, error: null }));
+    } else {
+      setOptimizeState((prev) => ({ ...prev, error: null }));
     }
   };
 
@@ -241,25 +316,39 @@ export default function App() {
           <div className="shrink-0 mb-4 flex items-center gap-1 bg-gray-100 p-1 rounded-xl w-fit">
             <button
               onClick={() => setMode('resume')}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                 mode === 'resume'
                   ? 'bg-white text-indigo-700 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               <FileText className="w-4 h-4" />
-              根据简历出题
+              <span className="hidden sm:inline">根据简历出题</span>
+              <span className="sm:hidden">出题</span>
             </button>
             <button
               onClick={() => setMode('transcript')}
-              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                 mode === 'transcript'
                   ? 'bg-white text-teal-700 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               <Mic className="w-4 h-4" />
-              面试录音提取
+              <span className="hidden sm:inline">面试录音提取</span>
+              <span className="sm:hidden">提取</span>
+            </button>
+            <button
+              onClick={() => setMode('optimize')}
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                mode === 'optimize'
+                  ? 'bg-white text-amber-700 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <PenLine className="w-4 h-4" />
+              <span className="hidden sm:inline">回答优化</span>
+              <span className="sm:hidden">优化</span>
             </button>
           </div>
 
@@ -273,11 +362,17 @@ export default function App() {
                     onChange={setResume}
                     isLoading={isResumeLoading}
                   />
-                ) : (
+                ) : mode === 'transcript' ? (
                   <TranscriptEditor
                     value={transcript}
                     onChange={setTranscript}
                     isLoading={isTranscriptLoading}
+                  />
+                ) : (
+                  <AnswerEditor
+                    value={optimizeInput}
+                    onChange={setOptimizeInput}
+                    isLoading={isOptimizeLoading}
                   />
                 )}
               </div>
@@ -304,6 +399,14 @@ export default function App() {
                     </div>
                   </div>
                 )}
+                {mode === 'optimize' && isOptimizeLoading && (
+                  <div className="flex items-center gap-3 px-1">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                      回答优化中...
+                    </div>
+                  </div>
+                )}
                 {isLoading ? (
                   <button
                     onClick={handleAbort}
@@ -321,7 +424,7 @@ export default function App() {
                     <Sparkles className="w-4 h-4" />
                     {genState.phase1 || genState.phase2 ? '重新生成' : '生成面试题'}
                   </button>
-                ) : (
+                ) : mode === 'transcript' ? (
                   <button
                     onClick={handleExtract}
                     disabled={!transcript.trim()}
@@ -329,6 +432,15 @@ export default function App() {
                   >
                     <Sparkles className="w-4 h-4" />
                     {extractState.content ? '重新提取' : '提取问答'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleOptimize}
+                    disabled={!optimizeInput.question.trim() || !optimizeInput.answer.trim()}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 disabled:cursor-not-allowed rounded-xl transition-all shadow-sm hover:shadow-amber-200 hover:shadow-md"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    {optimizeState.content ? '重新优化' : '优化回答'}
                   </button>
                 )}
               </div>
@@ -357,10 +469,15 @@ export default function App() {
                     isLoadingPhase1={genState.isLoadingPhase1}
                     isLoadingPhase2={genState.isLoadingPhase2}
                   />
-                ) : (
+                ) : mode === 'transcript' ? (
                   <ExtractionPanel
                     content={extractState.content}
                     isLoading={extractState.isLoading}
+                  />
+                ) : (
+                  <OptimizePanel
+                    content={optimizeState.content}
+                    isLoading={optimizeState.isLoading}
                   />
                 )}
               </div>
@@ -376,7 +493,9 @@ export default function App() {
             className={`h-full transition-all duration-500 ${
               mode === 'resume'
                 ? `bg-indigo-500 ${genState.isLoadingPhase1 ? 'w-1/2' : 'w-full'}`
-                : 'bg-teal-500 w-full animate-pulse'
+                : mode === 'transcript'
+                  ? 'bg-teal-500 w-full animate-pulse'
+                  : 'bg-amber-500 w-full animate-pulse'
             }`}
           />
         </div>
@@ -386,7 +505,7 @@ export default function App() {
       {successToast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-3 bg-gray-900 text-white text-sm rounded-xl shadow-lg animate-fade-in">
           <CheckCircle2 className="w-4 h-4 text-green-400" />
-          {mode === 'resume' ? '面试题生成完成！' : '问答提取完成！'}
+          {mode === 'resume' ? '面试题生成完成！' : mode === 'transcript' ? '问答提取完成！' : '回答优化完成！'}
         </div>
       )}
 
