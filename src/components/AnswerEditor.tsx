@@ -21,7 +21,7 @@ export function AnswerEditor({ value, onChange, isLoading }: AnswerEditorProps) 
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-amber-muted flex items-center justify-center">
             <PenLine className="w-3.5 h-3.5 text-amber" />
@@ -42,6 +42,7 @@ export function AnswerEditor({ value, onChange, isLoading }: AnswerEditorProps) 
           </button>
         )}
       </div>
+      <p className="text-[11px] text-text-tertiary leading-relaxed mb-4">AI 诊断你的回答，保留真实经历，优化结构与表达</p>
 
       <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto scrollbar-thin">
         {/* 面试题 */}

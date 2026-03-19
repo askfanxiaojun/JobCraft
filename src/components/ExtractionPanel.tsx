@@ -1,6 +1,6 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { MessageSquareText, Loader2, Download, Copy, Check } from 'lucide-react';
+import { MessageSquareText, Loader2, Download, Copy, Check, Sparkles, ShieldCheck, ListOrdered, GitMerge } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { exportExtractionAsMarkdown } from '../utils/export';
 
@@ -27,14 +27,67 @@ export function ExtractionPanel({ content, isLoading }: ExtractionPanelProps) {
 
   if (!hasContent) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center py-20 px-8">
-        <div className="w-16 h-16 rounded-2xl bg-teal-muted flex items-center justify-center mb-6">
-          <MessageSquareText className="w-7 h-7 text-teal" />
+      <div className="flex flex-col h-full overflow-y-auto scrollbar-thin">
+        <div className="flex flex-col gap-5 py-6 px-2 max-w-lg mx-auto w-full">
+          {/* 核心主张 */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-2xl bg-teal-muted flex items-center justify-center shrink-0">
+                <MessageSquareText className="w-5 h-5 text-teal" />
+              </div>
+              <h3 className="text-[15px] font-semibold text-text-primary tracking-tight leading-snug">面试完，别让记忆替你复盘</h3>
+            </div>
+            <p className="text-[13px] text-text-secondary leading-relaxed pl-[52px]">
+              面试结束后，大多数人只记得模糊的感受，却记不清具体问了什么、自己是怎么回答的——靠印象复盘往往抓不到真正的问题。
+            </p>
+          </div>
+
+          {/* 分割线 */}
+          <div className="h-px bg-border-subtle" />
+
+          {/* 价值亮点 */}
+          <div className="flex flex-col gap-3">
+            <p className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">AI 帮你做的事</p>
+
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-teal-muted/50">
+                <div className="w-6 h-6 rounded-lg bg-teal-muted flex items-center justify-center shrink-0 mt-0.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-teal" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-semibold text-text-primary mb-0.5">忠实还原，不做改写</p>
+                  <p className="text-[11px] text-text-tertiary leading-relaxed">保留候选人的原始回答，只整理结构，不润色内容</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-surface-inset">
+                <div className="w-6 h-6 rounded-lg bg-surface-card-hover flex items-center justify-center shrink-0 mt-0.5">
+                  <ListOrdered className="w-3.5 h-3.5 text-text-secondary" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-semibold text-text-primary mb-0.5">智能纠错 ASR 识别偏差</p>
+                  <p className="text-[11px] text-text-tertiary leading-relaxed">自动修正同音字、专业术语等语音识别错误</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-surface-inset">
+                <div className="w-6 h-6 rounded-lg bg-surface-card-hover flex items-center justify-center shrink-0 mt-0.5">
+                  <GitMerge className="w-3.5 h-3.5 text-text-secondary" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-semibold text-text-primary mb-0.5">追问归属 + 反问归类</p>
+                  <p className="text-[11px] text-text-tertiary leading-relaxed">追问自动挂在主问题下，候选人反问单独整理</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 操作提示 */}
+          <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-border-subtle bg-surface-card">
+            <Sparkles className="w-3.5 h-3.5 text-teal shrink-0" />
+            <p className="text-[11px] text-text-tertiary">在左侧粘贴录音转录文本，点击「提取问答」即可开始</p>
+          </div>
         </div>
-        <h3 className="text-base font-semibold text-text-primary mb-2 tracking-tight">提取结果将在这里展示</h3>
-        <p className="text-[13px] text-text-tertiary max-w-[280px] leading-relaxed">
-          粘贴面试录音的转录文本，AI 将自动提取结构化的问题与回答
-        </p>
       </div>
     );
   }

@@ -24,7 +24,7 @@ export function TranscriptEditor({ value, onChange, isLoading }: TranscriptEdito
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-teal-muted flex items-center justify-center">
             <Mic className="w-3.5 h-3.5 text-teal" />
@@ -45,6 +45,7 @@ export function TranscriptEditor({ value, onChange, isLoading }: TranscriptEdito
           </button>
         )}
       </div>
+      <p className="text-[11px] text-text-tertiary leading-relaxed mb-4">把混乱的录音文字，整理成干净的「问题 - 回答」结构</p>
 
       <textarea
         ref={textareaRef}

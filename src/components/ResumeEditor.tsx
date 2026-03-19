@@ -30,7 +30,7 @@ export function ResumeEditor({ value, onChange, isLoading }: ResumeEditorProps) 
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-accent-muted flex items-center justify-center">
             <FileText className="w-3.5 h-3.5 text-accent" />
@@ -51,6 +51,7 @@ export function ResumeEditor({ value, onChange, isLoading }: ResumeEditorProps) 
           </button>
         )}
       </div>
+      <p className="text-[11px] text-text-tertiary leading-relaxed mb-4">AI 分析你的经历，为一面和二面分别生成定制题库</p>
 
       <textarea
         ref={textareaRef}

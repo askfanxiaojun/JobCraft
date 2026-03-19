@@ -1,6 +1,6 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Brain, Target, Loader2, ChevronDown, ChevronUp, Download, Copy, Check } from 'lucide-react';
+import { Brain, Target, Loader2, ChevronDown, ChevronUp, Download, Copy, Check, Sparkles, BookOpen, Lightbulb } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { exportAsMarkdown } from '../utils/export';
 
@@ -131,14 +131,67 @@ export function QuestionPanel({
 
   if (!hasAnyContent) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center py-20 px-8">
-        <div className="w-16 h-16 rounded-2xl bg-accent-muted flex items-center justify-center mb-6">
-          <Brain className="w-7 h-7 text-accent" />
+      <div className="flex flex-col h-full overflow-y-auto scrollbar-thin">
+        <div className="flex flex-col gap-5 py-6 px-2 max-w-lg mx-auto w-full">
+          {/* 核心主张 */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-2xl bg-accent-muted flex items-center justify-center shrink-0">
+                <Brain className="w-5 h-5 text-accent" />
+              </div>
+              <h3 className="text-[15px] font-semibold text-text-primary tracking-tight leading-snug">不背题库，练你自己的</h3>
+            </div>
+            <p className="text-[13px] text-text-secondary leading-relaxed pl-[52px]">
+              大多数候选人靠背通用答案备考，但面试官真正考察的是你简历里的具体经历和项目——千篇一律的答案很难打动人。
+            </p>
+          </div>
+
+          {/* 分割线 */}
+          <div className="h-px bg-border-subtle" />
+
+          {/* 价值亮点 */}
+          <div className="flex flex-col gap-3">
+            <p className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">生成内容包含</p>
+
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-accent-muted/50">
+                <div className="w-6 h-6 rounded-lg bg-accent-muted flex items-center justify-center shrink-0 mt-0.5">
+                  <Target className="w-3.5 h-3.5 text-accent" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-semibold text-text-primary mb-0.5">一面 · 专业执行力（15-18 题）</p>
+                  <p className="text-[11px] text-text-tertiary leading-relaxed">项目深挖、基本功、协作执行、数据实感</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-purple-500/8">
+                <div className="w-6 h-6 rounded-lg bg-purple-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <Brain className="w-3.5 h-3.5 text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-semibold text-text-primary mb-0.5">二面 · 思维力（15-18 题）</p>
+                  <p className="text-[11px] text-text-tertiary leading-relaxed">问题发现力、思考深度、方法论、商业视野</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-surface-inset">
+                <div className="w-6 h-6 rounded-lg bg-surface-card-hover flex items-center justify-center shrink-0 mt-0.5">
+                  <Lightbulb className="w-3.5 h-3.5 text-text-secondary" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-semibold text-text-primary mb-0.5">每题附详细注解</p>
+                  <p className="text-[11px] text-text-tertiary leading-relaxed">难度标注 · 考察点 · 面试官真实意图 · 答题建议</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 操作提示 */}
+          <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-border-subtle bg-surface-card">
+            <Sparkles className="w-3.5 h-3.5 text-accent shrink-0" />
+            <p className="text-[11px] text-text-tertiary">在左侧粘贴简历，点击「生成面试题」即可开始</p>
+          </div>
         </div>
-        <h3 className="text-base font-semibold text-text-primary mb-2 tracking-tight">面试题将在这里展示</h3>
-        <p className="text-[13px] text-text-tertiary max-w-[280px] leading-relaxed">
-          填写简历内容，点击「生成面试题」，AI 将为你量身定制面试问题
-        </p>
       </div>
     );
   }
