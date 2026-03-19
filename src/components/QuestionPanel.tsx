@@ -1,6 +1,6 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Brain, Target, Loader2, ChevronDown, ChevronUp, Download, Copy, Check, Sparkles, BookOpen, Lightbulb } from 'lucide-react';
+import { Brain, Target, Loader2, ChevronDown, ChevronUp, Download, Copy, Check, Sparkles, Lightbulb } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { exportAsMarkdown } from '../utils/export';
 
