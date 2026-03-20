@@ -60,7 +60,7 @@
   --prose-headings: rgba(255, 255, 255, 0.95);
   --prose-lead: rgba(255, 255, 255, 0.6);
   --prose-links: #818cf8;
-  --prose-bold: rgba(255, 255, 255, 0.9);
+  --prose-bold: rgba(255, 255, 255, 1);
   --prose-counters: rgba(255, 255, 255, 0.4);
   --prose-bullets: rgba(255, 255, 255, 0.3);
   --prose-hr: rgba(255, 255, 255, 0.08);
@@ -128,7 +128,7 @@
   --prose-headings: rgba(0, 0, 0, 0.90);
   --prose-lead: rgba(0, 0, 0, 0.55);
   --prose-links: #4f46e5;
-  --prose-bold: rgba(0, 0, 0, 0.85);
+  --prose-bold: rgba(0, 0, 0, 1);
   --prose-counters: rgba(0, 0, 0, 0.4);
   --prose-bullets: rgba(0, 0, 0, 0.3);
   --prose-hr: rgba(0, 0, 0, 0.08);
@@ -389,6 +389,10 @@
     --tw-prose-pre-bg: var(--prose-pre-bg);
     --tw-prose-th-borders: var(--prose-th-borders);
     --tw-prose-td-borders: var(--prose-td-borders);
+  }
+
+  .prose-dark :where(strong):not(:where([class~=not-prose],[class~=not-prose] *)) {
+    font-weight: 700;
   }
 
   /* Theme toggle button animation */

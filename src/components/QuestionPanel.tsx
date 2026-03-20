@@ -8,9 +8,10 @@ interface PhaseCardProps {
   phase: 1 | 2;
   content: string;
   isLoading: boolean;
+  stickyTop?: number;
 }
 
-function PhaseCard({ phase, content, isLoading }: PhaseCardProps) {
+function PhaseCard({ phase, content, isLoading, stickyTop = 0 }: PhaseCardProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -38,8 +39,10 @@ function PhaseCard({ phase, content, isLoading }: PhaseCardProps) {
 
   return (
     <div className="glass-card rounded-2xl overflow-hidden animate-fade-in">
+      {/* 吸顶标题栏 */}
       <div
-        className="flex items-center justify-between p-5 cursor-pointer select-none transition-colors duration-300 hover:bg-surface-inset"
+        className="sticky z-10 flex items-center justify-between p-5 cursor-pointer select-none transition-colors duration-300 hover:bg-surface-inset bg-surface-elevated/95 backdrop-blur-sm rounded-t-2xl"
+        style={{ top: stickyTop }}
         onClick={() => content && setCollapsed(!collapsed)}
       >
         <div className="flex items-center gap-3.5">
@@ -196,10 +199,14 @@ export function QuestionPanel({
     );
   }
 
+  // 导出按钮高度约 42px（py-2 + text-[12px] + border），相位卡片标题在其下方吸顶
+  const exportBarHeight = canExport ? 42 : 0;
+
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="h-full overflow-y-auto scrollbar-thin">
+      {/* 吸顶导出栏 */}
       {canExport && (
-        <div className="flex justify-end mb-4 shrink-0">
+        <div className="sticky top-0 z-20 flex justify-end pb-2 bg-surface-elevated/95 backdrop-blur-sm">
           <button
             onClick={() => exportAsMarkdown(phase1Content, phase2Content)}
             className="flex items-center gap-2 px-3.5 py-2 text-[12px] font-medium btn-ghost rounded-xl border border-border-subtle"
@@ -210,9 +217,10 @@ export function QuestionPanel({
         </div>
       )}
 
-      <div className="flex-1 flex flex-col gap-4 overflow-y-auto scrollbar-thin pb-4 min-h-0">
-        <PhaseCard phase={1} content={phase1Content} isLoading={isLoadingPhase1} />
-        <PhaseCard phase={2} content={phase2Content} isLoading={isLoadingPhase2} />
+      {/* 两个相位卡片平铺展开，统一滚动 */}
+      <div className="flex flex-col gap-4 pb-4 pt-3">
+        <PhaseCard phase={1} content={phase1Content} isLoading={isLoadingPhase1} stickyTop={exportBarHeight} />
+        <PhaseCard phase={2} content={phase2Content} isLoading={isLoadingPhase2} stickyTop={exportBarHeight} />
       </div>
     </div>
   );
